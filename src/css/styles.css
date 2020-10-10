@@ -1,0 +1,10 @@
+body {
+  font-family: sans-serif;
+}
+
+.gameWindow{
+  border: 2px solid black;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
