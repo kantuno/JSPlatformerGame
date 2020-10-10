@@ -1,6 +1,7 @@
 import Platform from "./platform.js";
 import Ball from "./ball.js";
 import GameObject from "./gameobject.js";
+import Sprite from './sprite.js';
 
 const LEFT_KEY = 37;
 const UP_KEY = 38;
@@ -15,6 +16,7 @@ class Engine{
     #ctx;
     #height;
     #objects;
+    #player;
     #width;
 
     /**
@@ -79,7 +81,7 @@ class Engine{
      * @param {Event} e - The event triggered by a key press.
      */
     #keyinput(e){
-        let platform = this.#getObjectByName("plat");
+        let platform = this.#getObjectByName("player");
 
         if(e.keyCode === UP_KEY){
             this.#translate(platform, {x: 0, y: -1});
@@ -115,8 +117,7 @@ class Engine{
     #mouseinput(e){
         let rect = this.#canvas.getBoundingClientRect();
         if(this.#isInBounds(rect, {x: e.clientX, y: e.clientY})){
-            let platform = this.#getObjectByName("plat");
-            this.#moveToPos(platform, {x: e.clientX - rect.left, y: e.clientY - rect.top});
+            this.#moveToPos(this.#getObjectByName("player"), {x: e.clientX - rect.left, y: e.clientY - rect.top});
         }
     }
 
@@ -231,8 +232,28 @@ class Engine{
     }
 
     /**
+     * Checks an object against every element in the #objects array for collision.
+     * @param {GameObject} obj - The object to check for collision against every other object.
+     * @return {GameObject[]} An array of all objects obj collided with.
+     */
+    #checkForCollision(obj){
+        let returnArray = [];
+
+        this.#objects.forEach(item => {
+            if(item != obj){
+                if(this.#detectCollision(obj, item)){
+                    returnArray.push(item);
+                }
+            }
+        });
+
+        return returnArray;
+    }
+
+    /**
      * Adds an object to the #objects array after error checking.
-     * @param {GameObject} obj 
+     * @param {GameObject} obj
+     * @return {GameObject} The object added to the array.
      */
     #addObject(obj){
         if(arguments.length === 1){
@@ -247,6 +268,7 @@ class Engine{
 
                 if(isUnique){
                     this.#objects.push(obj);
+                    return obj;
                 }
                 else{
                     console.log("Error: addObject tried to add a gameobject with a non-unique name.");
@@ -266,21 +288,21 @@ class Engine{
      * @param {number} fps - The frames per second to run the game at. Defaults to 30. 
      */
     start(fps){
-        if(typeof(fps) === 'undefined'){
+        if(fps === undefined){
             fps = 30;
         }
 
         document.addEventListener('keydown', (e) => this.#keyinput(e));
         this.#canvas.addEventListener('mousedown', (e) => this.#mouseinput(e));
 
-        this.#addObject(new Ball("plat", {x: 100, y: 100}, 20, "blue"));
-        this.#addObject(new Platform("plattwo", {x: 200, y: 200}, 50, "red"));
-        this.#addObject(new Ball("balltwo", {x: 400, y: 400}, 30));
+        this.#player = this.#addObject(new Sprite("player", {x: 100, y: 100}, "test"));
+        this.#addObject(new Platform("plattwo", {x: 400, y: 410}, 50, "red"));
+        this.#addObject(new Ball("balltwo", {x: 400, y: 400}, 30));       
 
         setInterval(() => {
-            if(this.#detectCollision(this.#objects[0], this.#objects[1]) || this.#detectCollision(this.#objects[0], this.#objects[2])){
-                console.log("Collided");
-            }
+            this.#checkForCollision(this.#player).forEach(col => {
+                console.log(col.name);
+            });
 
             this.#render();
         }, 1000 / fps);
