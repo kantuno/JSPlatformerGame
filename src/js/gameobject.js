@@ -2,23 +2,19 @@
  * Class to store an object in the game. Should never be directly created as an object, only extended.
  */
 class GameObject {
-    height;
-    width;
     pos;
     name;
+    collisionType;
 
     /**
      * Constructor for a GameObject
      * @param {string} name - The name of the GameObject. Defaults to "".
      * @param {Object} pos - The position of the object in format {x, y}. Defaults to {0, 0}
-     * @param {number} width - The width of the object. Defaults to 10.
-     * @param {number} height - The height of the object. Defaults to 10.
      */
-    constructor(name, pos, width, height){
-        this.height = (typeof height === 'undefined') ? 10 : height;
-        this.pos = (typeof pos === 'undefined') ? {x: 0, y: 0} : pos;
-        this.width = (typeof width === 'undefined') ? 10 : width;
-        this.name = (typeof name === 'undefined') ? "" : name;
+    constructor(name, pos){
+        this.pos = (pos === undefined) ? {x: 0, y: 0} : pos;
+        this.name = (name === undefined) ? "" : name;
+        this.collisionType = null;
     }
 
     /**

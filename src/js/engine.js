@@ -1,4 +1,6 @@
 import Platform from "./platform.js";
+import Ball from "./ball.js";
+import GameObject from "./gameobject.js";
 
 const LEFT_KEY = 37;
 const UP_KEY = 38;
@@ -142,17 +144,120 @@ class Engine{
     }
 
     /**
-     * Detects collision between two given objects, or one object and everything in the objects array.
+     * Detects collision between two rectangle shaped objects.
      * @param {GameObject} objOne - The first object. 
-     * @param {GameObject} objTwo - The second object. Optional, if not given objOne is checked against every element of objects.
-     * @return {GameObject} The object objOne collided with, or null if there is no collision. 
+     * @param {GameObject} objTwo - The second object.
+     * @return {boolean} True if the objects are collided, false otherwise
      */
-    #detectCollision(objOne, objTwo){
-        if(arguments.length === 1){
-
+    #detectRectCollision(objOne, objTwo){
+        if(objOne.pos.x < objTwo.pos.x + objTwo.width &&
+            objOne.pos.x + objOne.width > objTwo.pos.x &&
+            objOne.pos.y < objTwo.pos.y + objTwo.height &&
+            objOne.pos.y + objOne.height > objTwo.pos.y){
+                return true;
         }
         else{
+            return false;
+        }
+    }
 
+    /**
+     * Detects collision between two circle shaped objects.
+     * @param {GameObject} objOne - The first object. 
+     * @param {GameObject} objTwo - The second object.
+     * @return {boolean} True if the objects are collided, false otherwise
+     */
+    #detectCircleCollision(objOne, objTwo){
+        let dx = objOne.pos.x - objTwo.pos.x;
+        let dy = objOne.pos.y - objTwo.pos.y;
+
+        if(Math.sqrt(dx * dx + dy * dy) < objOne.radius + objTwo.radius){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    /**
+     * Detects collision between a rectangle shaped object and a circle shaped object.
+     * @param {GameObject} rect - The rectangle object. 
+     * @param {GameObject} circle - The circle object.
+     * @return {boolean} True if the objects are collided, false otherwise
+     */
+    #detectRectCircleCollision(rect, circle){
+        let xDistance = Math.abs((rect.pos.x + rect.width / 2) - circle.pos.x);
+        let yDistance = Math.abs((rect.pos.y + rect.height / 2) - circle.pos.y);
+
+        if(xDistance > (rect.width / 2 + circle.radius)){
+            return false;
+        }
+        else if(yDistance > (rect.height / 2 + circle.radius)){
+            return false;
+        }
+        else if(xDistance <= (rect.width / 2)){
+            return true;
+        }
+        else if(yDistance <= (rect.height / 2)) {
+            return true;
+        }
+        else{
+            let dx = xDistance - rect.width / 2;
+            let dy = yDistance - rect.height / 2;
+
+            return(dx * dx + dy * dy <= (circle.radius * circle.radius));
+        }
+    }
+
+    /**
+     * Takes two objects and passes them on to the correct collision detection function depending on their collision types.
+     * @param {GameObject} objOne 
+     * @param {GameObject} objTwo
+     * @return {boolean} True if the objects have collided, false otherwise 
+     */
+    #detectCollision(objOne, objTwo){
+        if(objOne.collisionType === 'rect' && objTwo.collisionType === 'rect'){
+            return this.#detectRectCollision(objOne, objTwo);
+        }
+        else if (objOne.collisionType === 'circle' && objTwo.collisionType === 'circle'){
+            return this.#detectCircleCollision(objOne, objTwo);
+        }
+        else if(objOne.collisionType === 'rect' && objTwo.collisionType === 'circle'){
+            return this.#detectRectCircleCollision(objOne, objTwo);
+        }
+        else if(objOne.collisionType === 'circle' && objTwo.collisionType === 'rect'){
+            return this.#detectRectCircleCollision(objTwo, objOne);
+        }
+    }
+
+    /**
+     * Adds an object to the #objects array after error checking.
+     * @param {GameObject} obj 
+     */
+    #addObject(obj){
+        if(arguments.length === 1){
+            if(obj instanceof GameObject){
+                let isUnique = true;
+
+                this.#objects.forEach(item => {
+                    if(obj.name === item.name){
+                        isUnique = false;
+                    }
+                });
+
+                if(isUnique){
+                    this.#objects.push(obj);
+                }
+                else{
+                    console.log("Error: addObject tried to add a gameobject with a non-unique name.");
+                }
+            }
+            else{
+                console.log("Error: addObject tried to add a non-gameobject.");
+            }
+        }
+        else{
+            console.log("Error: addObject incorrect number of arguments.");
         }
     }
 
@@ -168,9 +273,15 @@ class Engine{
         document.addEventListener('keydown', (e) => this.#keyinput(e));
         this.#canvas.addEventListener('mousedown', (e) => this.#mouseinput(e));
 
-        this.#objects.push(new Platform("plat", {x: 100, y: 100}, 200, "blue"));
+        this.#addObject(new Ball("plat", {x: 100, y: 100}, 20, "blue"));
+        this.#addObject(new Platform("plattwo", {x: 200, y: 200}, 50, "red"));
+        this.#addObject(new Ball("balltwo", {x: 400, y: 400}, 30));
 
         setInterval(() => {
+            if(this.#detectCollision(this.#objects[0], this.#objects[1]) || this.#detectCollision(this.#objects[0], this.#objects[2])){
+                console.log("Collided");
+            }
+
             this.#render();
         }, 1000 / fps);
     }
