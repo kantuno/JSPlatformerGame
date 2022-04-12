@@ -2,6 +2,7 @@ import Platform from "./platform.js";
 import Ball from "./ball.js";
 import GameObject from "./gameobject.js";
 import Sprite from './sprite.js';
+import PlatformGenerator from "./platformgenerator.js";
 
 const LEFT_KEY = 37;
 const UP_KEY = 38;
@@ -18,6 +19,7 @@ class Engine{
     #objects;
     #player;
     #width;
+    #generator;
 
     /**
      * Constructor for the Engine class
@@ -83,15 +85,8 @@ class Engine{
     #keyinput(e){
         let platform = this.#getObjectByName("player");
 
-        if(e.keyCode === UP_KEY){
-            this.#translate(platform, {x: 0, y: -1});
-        } else if(e.keyCode === DOWN_KEY){
-            this.#translate(platform, {x: 0, y: 1});
-        } else if(e.keyCode === LEFT_KEY){
-            this.#translate(platform, {x: -1, y: 0});
-        }
-        else if(e.keyCode === RIGHT_KEY){
-            this.#translate(platform, {x: 1, y: 0});
+        if(e.keyCode === 32){
+            this.#translate(platform, {x: 0, y: -30});
         }
     }
 
@@ -115,10 +110,7 @@ class Engine{
      * @param {Event} e - The event triggered by a mouse click. 
      */
     #mouseinput(e){
-        let rect = this.#canvas.getBoundingClientRect();
-        if(this.#isInBounds(rect, {x: e.clientX, y: e.clientY})){
-            this.#moveToPos(this.#getObjectByName("player"), {x: e.clientX - rect.left, y: e.clientY - rect.top});
-        }
+
     }
 
     /**
@@ -297,11 +289,38 @@ class Engine{
 
         this.#player = this.#addObject(new Sprite("player", {x: 100, y: 100}, "test"));
         this.#addObject(new Platform("plattwo", {x: 400, y: 410}, 50, "red"));
-        this.#addObject(new Ball("balltwo", {x: 400, y: 400}, 30));       
+        this.#addObject(new Ball("balltwo", {x: 400, y: 400}, 30));
+        
+        this.#generator = new PlatformGenerator(50, this.#width, this.#height);
+
+        let player = this.#getObjectByName("player");
+        let gravity = true;
 
         setInterval(() => {
+            gravity = true;
+
             this.#checkForCollision(this.#player).forEach(col => {
-                console.log(col.name);
+                gravity = false;
+            });
+
+            if(gravity){
+                this.#translate(player, {x: 0, y: 1});
+            }
+
+            const p = this.#generator.tick();
+
+            if(p != null){
+                this.#addObject(p);
+            }
+
+            this.#objects.forEach(obj => {
+                if(obj.name.startsWith('platform')){
+                    this.#translate(obj, {x: -5, y: 0});
+                }
+
+                if(obj.pos.x <= -200){
+                    //remove obj from array
+                }
             });
 
             this.#render();
